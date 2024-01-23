@@ -1,11 +1,16 @@
 #include "common.h"
 #include "main.h"
-#include "init.c"
+#include "init.h"
+
+Game game;
 
 int main(void)
 {
+    memset(&game, 0, sizeof(Game));
+
     atexit(&cleanup);
     initSDL();
+
 
     while (1) {
         doInput();

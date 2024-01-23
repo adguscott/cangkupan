@@ -1,8 +1,7 @@
 #include "common.h"
 #include "init.h"
 
-SDL_Window *window = NULL;
-SDL_Renderer *renderer = NULL;
+extern Game game;
 
 void initSDL(void) 
 {
@@ -16,8 +15,8 @@ void initSDL(void)
         exit(1);
     }
 
-    window = SDL_CreateWindow("Cangkupan", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, windowFlags);
-    if (!window) {
+    game.window = SDL_CreateWindow("Cangkupan", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, windowFlags);
+    if (!game.window) {
         fprintf(stderr, "Failed to open SDL Window: %s\n", SDL_GetError());
         exit(1);
     }
@@ -25,9 +24,9 @@ void initSDL(void)
     // not sure what this does?
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
 
-    renderer = SDL_CreateRenderer(window, -1, rendererFlags);
+    game.renderer = SDL_CreateRenderer(game.window, -1, rendererFlags);
 
-    if (!renderer) {
+    if (!game.renderer) {
         fprintf(stderr, "Failed to create SDL renderer: %s\n", SDL_GetError());
         exit(1);
     }
@@ -35,9 +34,9 @@ void initSDL(void)
 
 void cleanup(void)
 {
-    SDL_DestroyRenderer(renderer);
+    SDL_DestroyRenderer(game.renderer);
 
-    SDL_DestroyWindow(window);
+    SDL_DestroyWindow(game.window);
 
     SDL_Quit();
 }

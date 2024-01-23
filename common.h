@@ -7,4 +7,4 @@
 #include <stdlib.h>
 #include <string.h>
 #include "defs.h"
-#include "init.h"
+#include "structs.h"
