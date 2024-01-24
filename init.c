@@ -2,6 +2,7 @@
 #include "init.h"
 
 extern Game game;
+extern Sprite sprites;
 
 void initSDL(void) 
 {
@@ -30,6 +31,16 @@ void initSDL(void)
         fprintf(stderr, "Failed to create SDL renderer: %s\n", SDL_GetError());
         exit(1);
     }
+}
+
+Sprite *createSpriteFromLine(char *line)
+{
+    Sprite *sprite = malloc(sizeof(Sprite));
+    memset(sprite, 0, sizeof(Sprite));
+
+    sprintf(line, "%s %d %d %d %d", sprite->name, sprite->rect.x, sprite->rect.y, sprite->rect.w, sprite->rect.h);
+
+    return sprite;
 }
 
 void cleanup(void)
