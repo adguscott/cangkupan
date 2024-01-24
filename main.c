@@ -3,6 +3,7 @@
 #include "init.h"
 
 Game game;
+Sprites sprites;
 
 int main(void)
 {
