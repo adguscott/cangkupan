@@ -1,2 +1,6 @@
+24-01-2024
+Split spritesheet mapping files for each type. 
+Added Sprite and Sprites structs to structs.
+
 23-01-2024
-Created project, basic file structure, README and CHANGELOG.
+Created project, basic file structure and window rendering, README and CHANGELOG.
