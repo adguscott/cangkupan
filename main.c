@@ -7,12 +7,14 @@
 Game game;
 Sprites sprites;
 SDL_Texture *spritesheet;
+Player *player;
 
 int main(void)
 {
     memset(&game, 0, sizeof(Game));
     memset(&sprites, 0, sizeof(Sprites));
-
+    
+    
     sprites.blocksTail = &sprites.blocksHead;
     sprites.cratesTail = &sprites.cratesHead;
     sprites.groundTail = &sprites.groundHead;
@@ -35,14 +37,15 @@ int main(void)
         return -1;
     }
 
-    printf("Sprites loaded\n");
+    player = initPlayer();
 
     while (1) {
         doInput();
+	doMovement();
         drawScene();
         drawPlayer();
         SDL_RenderPresent(game.renderer);
-        SDL_Delay(300);
+        SDL_Delay(100);
     }
 }
 
@@ -51,75 +54,66 @@ void doInput(void)
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
-            case SDL_QUIT:
-                exit(0);
-                break;
-
-            default:
-                break;
+	case SDL_QUIT:
+	    exit(0);
+	    break;
+	case SDL_KEYDOWN:
+	    movePlayer(&event.key, 1);
+	    break;
+	case SDL_KEYUP:
+	    movePlayer(&event.key, 0);
+	    break;
+	default:
+	    break;
         }
     }
 }
 
+void movePlayer(SDL_KeyboardEvent *event, int down)
+{
+    if (event->repeat == 0) {
+	if (event->keysym.scancode == SDL_SCANCODE_UP) {
+	    player->dy = (down) ? player->dy - PLAYER_SPEED : 0;
+	}
+
+	if (event->keysym.scancode == SDL_SCANCODE_DOWN) {
+	    player->dy = (down) ? player->dy + PLAYER_SPEED : 0;
+	}
+
+	if (event->keysym.scancode == SDL_SCANCODE_LEFT) {
+	    player->dx = (down) ? player->dx - PLAYER_SPEED : 0;
+	}
+
+	if (event->keysym.scancode == SDL_SCANCODE_RIGHT) {
+	    player->dx = (down) ? player->dx + PLAYER_SPEED : 0;
+	}
+    }
+}
+
+void doMovement(void)
+{
+    printf("x: %d, y: %d, dx: %d, dy: %d\n", player->x, player->y, player->dx, player->dy);
+    player->x += player->dx;
+    player->y += player->dy;
+}
+
 void drawScene(void)
 {
-    SDL_SetRenderDrawColor(game.renderer, 128, 192, 255, 255);
     SDL_RenderClear(game.renderer);
+    drawGround();
+}
+
+void drawGround(void)
+{
+    Sprite *groundSprite = getSprite("ground_06");
+    for(int x = 0; x < SCREEN_WIDTH; x += 64) {
+	for (int y = 0; y < SCREEN_HEIGHT; y += 64) {
+	    blitRect(spritesheet, groundSprite, x, y);
+	}
+    }
 }
 
 void drawPlayer(void) 
 {
-    Sprite *sprite = NULL;
-    int x, y;
-    x = y = 0;
-
-    for (sprite = sprites.blocksHead.next; sprite != NULL; sprite = sprite->next) {
-            if (x + sprite->w > SCREEN_WIDTH) {
-                y += 64;
-                x = 0;
-            }
-
-            blitRect(spritesheet, sprite, x, y);
-            x += 64;
-    }
-
-    for (sprite = sprites.cratesHead.next; sprite != NULL; sprite = sprite->next) {
-            if (x + sprite->w > SCREEN_WIDTH) {
-                y += 64;
-                x = 0;
-            }
-
-            blitRect(spritesheet, sprite, x, y);
-            x += 64;
-    }
-
-    for (sprite = sprites.groundHead.next; sprite != NULL; sprite = sprite->next) {
-            if (x + sprite->w > SCREEN_WIDTH) {
-                y += 64;
-                x = 0;
-            }
-
-            blitRect(spritesheet, sprite, x, y);
-            x += 64;
-    }
-
-    for (sprite = sprites.envHead.next; sprite != NULL; sprite = sprite->next) {
-            if (x + sprite->w > SCREEN_WIDTH) {
-                y += 64;
-                x = 0;
-            }
-
-            blitRect(spritesheet, sprite, x, y);
-            x += 64;
-    }
-
-    for (sprite = sprites.playerHead.next; sprite != NULL; sprite = sprite->next) {
-            if (x + sprite->w > SCREEN_WIDTH) {
-                y += 64;
-                x = 0;
-            }
-
-            blitRect(spritesheet, sprite, x, y);
-            x += 64;
-}
+    blitRect(spritesheet, player->sprite, player->x, player->y);
 }
