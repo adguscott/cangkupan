@@ -140,18 +140,37 @@ void cleanup(void)
 Sprite *getSprite(char *spriteName)
 {
     Sprite *sprite;
-     
-    for (sprite = sprites.playerHead.next; sprite != NULL; sprite = sprite->next) {
+    
+    for (sprite = sprites.blocksHead.next; sprite != NULL; sprite = sprite->next) {
 	if (strcmp(sprite->name, spriteName) == 0) {
 	    return sprite;
 	}
     }
-    
+
+    for (sprite = sprites.cratesHead.next; sprite != NULL; sprite = sprite->next) {
+	if (strcmp(sprite->name, spriteName) == 0) {
+	    return sprite;
+	}
+    }
+
     for (sprite = sprites.groundHead.next; sprite != NULL; sprite = sprite->next) {
 	if (strcmp(sprite->name, spriteName) == 0) {
 	    return sprite;
 	}
     }
+    
+    for (sprite = sprites.envHead.next; sprite != NULL; sprite = sprite->next) {
+	if (strcmp(sprite->name, spriteName) == 0) {
+	    return sprite;
+	}
+    }
+    
+    for (sprite = sprites.playerHead.next; sprite != NULL; sprite = sprite->next) {
+	if (strcmp(sprite->name, spriteName) == 0) {
+	    return sprite;
+	}
+    }
+        
     return NULL;
 }
 
