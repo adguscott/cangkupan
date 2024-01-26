@@ -29,7 +29,6 @@ void initSDL(void)
     // not sure what this does?
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
     
-    
     game.renderer = SDL_CreateRenderer(game.window, -1, rendererFlags);
 
     if (!game.renderer) {
@@ -51,6 +50,7 @@ int loadTexture(void) {
 
 int loadSprites(void)
 {
+    // TODO: fix this horrible function
     int loadStatus = 0;
 
     printf("Loading sprite data...\n");
