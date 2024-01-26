@@ -1,1 +1,1 @@
-void blitRect(SDL_Texture *texture, SDL_Rect *src, int x, int y);
+void blitRect(SDL_Texture *texture, Sprite *sprite, int x, int y);

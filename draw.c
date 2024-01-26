@@ -1,12 +1,22 @@
 #include "common.h"
+#include "draw.h"
 
-void blitRect(SDL_Texture *texture, SDL_Rect *src, int x, int y)
+extern Game game;
+
+void blitRect(SDL_Texture *texture, Sprite *src, int x, int y)
 {
-    SDL_Rect dest;
+    SDL_Rect source, dest;
+    
+    source.x = src->x;
+    source.y = src->y;
+    source.w = src->w;
+    source.h = src->h;
+
     dest.x = x;
     dest.y = y;
     dest.w = src->w;
     dest.h = src->h;
 
-    SDL_RenderCopy(NULL, texture, src, &dest);
+    SDL_RenderCopy(game.renderer, texture, &source, &dest);
 }
+
