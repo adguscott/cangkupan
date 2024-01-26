@@ -1,4 +1,5 @@
 typedef struct Sprite Sprite;
+typedef struct Entity Entity;
 
 typedef struct
 {
@@ -8,12 +9,10 @@ typedef struct
 
 struct Sprite
 {
-   char name[50];
-   int x;
-   int y;
-   int w;
-   int h;
-   Sprite *next;
+    char name[50];
+    int x, y;
+    int w, h;
+    Sprite *next;
 };
 
 typedef struct
@@ -24,3 +23,20 @@ typedef struct
     Sprite  envHead, *envTail;
     Sprite  playerHead, *playerTail;
 } Sprites;
+
+struct Entity
+{
+    int x, y;
+    int dx, dy;
+    Sprite *sprite;
+    long flags;
+    Entity *next;
+};
+
+typedef struct
+{
+    int x, y;
+    int dx, dy;
+    Sprite *sprite;
+    //Sprite *sprites[];
+} Player;
