@@ -37,6 +37,7 @@ void initSDL(void)
     }
     
 }
+
 int loadTexture(void) {
     spritesheet = IMG_LoadTexture(game.renderer, "gfx/spritesheet.png");
 
@@ -134,4 +135,34 @@ void cleanup(void)
     
     IMG_Quit();
     SDL_Quit();
+}
+
+Sprite *getSprite(char *spriteName)
+{
+    Sprite *sprite;
+     
+    for (sprite = sprites.playerHead.next; sprite != NULL; sprite = sprite->next) {
+	if (strcmp(sprite->name, spriteName) == 0) {
+	    return sprite;
+	}
+    }
+    
+    for (sprite = sprites.groundHead.next; sprite != NULL; sprite = sprite->next) {
+	if (strcmp(sprite->name, spriteName) == 0) {
+	    return sprite;
+	}
+    }
+    return NULL;
+}
+
+Player *initPlayer(void)
+{
+    Player *player = malloc(sizeof(Player));
+    memset(player, 0, sizeof(Player));
+
+    player->x = 100;
+    player->y = 100;
+    player->sprite = getSprite("player_05");
+
+    return player;
 }
