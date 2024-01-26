@@ -9,7 +9,10 @@ typedef struct
 struct Sprite
 {
    char name[50];
-   SDL_Rect rect;
+   int x;
+   int y;
+   int w;
+   int h;
    Sprite *next;
 };
 
