@@ -63,7 +63,6 @@ void doInput(void)
 void drawScene(void)
 {
     SDL_SetRenderDrawColor(game.renderer, 128, 192, 255, 255);
-    printf("%s\n", SDL_GetError());
     SDL_RenderClear(game.renderer);
 }
 
