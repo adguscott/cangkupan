@@ -38,5 +38,8 @@ typedef struct
     int x, y;
     int dx, dy;
     Sprite *sprite;
-    //Sprite *sprites[];
+    Sprite *animationUp[4];
+    Sprite *animationDown[4];
+    Sprite *animationLeft[4];
+    Sprite *animationRight[4];
 } Player;
