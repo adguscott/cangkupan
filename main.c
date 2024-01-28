@@ -25,13 +25,13 @@ int main(void)
     atexit(&cleanup);
     initSDL();
     
-    if (loadTexture() != 0) {
+    if (!loadTexture()) {
         fprintf(stderr, "Could not load spritesheet, exiting game.\n");
         cleanup();
         return -1;
     }
 
-    if (loadSprites() != 0) {
+    if (!loadSprites()) {
         fprintf(stderr, "Could not load sprite data, exiting game.\n");
         cleanup();
         return -1;
