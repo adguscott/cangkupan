@@ -1,4 +1,3 @@
-
 #include "common.h"
 #include "main.h"
 #include "init.h"
@@ -11,10 +10,12 @@ Player *player;
 
 int main(void)
 {
+    long then;
+    float remainder;
+    
     memset(&game, 0, sizeof(Game));
     memset(&sprites, 0, sizeof(Sprites));
-    
-    
+        
     sprites.blocksTail = &sprites.blocksHead;
     sprites.cratesTail = &sprites.cratesHead;
     sprites.groundTail = &sprites.groundHead;
@@ -24,7 +25,6 @@ int main(void)
     atexit(&cleanup);
     initSDL();
     
-
     if (loadTexture() != 0) {
         fprintf(stderr, "Could not load spritesheet, exiting game.\n");
         cleanup();
@@ -38,14 +38,18 @@ int main(void)
     }
 
     player = initPlayer();
-
+    
+    then = SDL_GetTicks();
+    remainder = 0;
     while (1) {
         doInput();
 	doMovement();
         drawScene();
         drawPlayer();
+
+	capFrameRate(&then, &remainder);
         SDL_RenderPresent(game.renderer);
-        SDL_Delay(100);
+	
     }
 }
 
@@ -92,7 +96,6 @@ void movePlayer(SDL_KeyboardEvent *event, int down)
 
 void doMovement(void)
 {
-    printf("x: %d, y: %d, dx: %d, dy: %d\n", player->x, player->y, player->dx, player->dy);
     player->x += player->dx;
     player->y += player->dy;
 }
@@ -115,5 +118,42 @@ void drawGround(void)
 
 void drawPlayer(void) 
 {
+    int animationSpeed = SDL_GetTicks() / 150;
+    int index = animationSpeed % 4;
+
+    if (player->dy > 0) {
+	player->sprite = player->animationDown[index];
+    } else if (player->dy < 0) {
+       	player->sprite = player->animationUp[index];
+    } else if (player->dx > 0) {
+	player->sprite = player->animationRight[index];
+    } else if (player->dx < 0) {
+	player->sprite = player->animationLeft[index];
+    }
+    
     blitRect(spritesheet, player->sprite, player->x, player->y);
+}
+
+void capFrameRate(long *then, float *remainder)
+{
+	long wait, frameTime;
+
+	wait = 16 + *remainder;
+
+	*remainder -= (int)*remainder;
+
+	frameTime = SDL_GetTicks() - *then;
+
+	wait -= frameTime;
+
+	if (wait < 1)
+	{
+		wait = 1;
+	}
+
+	SDL_Delay(wait);
+
+	*remainder += 0.667;
+
+	*then = SDL_GetTicks();
 }
