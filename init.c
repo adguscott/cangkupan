@@ -38,75 +38,67 @@ void initSDL(void)
     
 }
 
-int loadTexture(void) {
+bool loadTexture(void) {
     spritesheet = IMG_LoadTexture(game.renderer, "gfx/spritesheet.png");
 
     if (spritesheet == NULL) {
         perror("Failed to load spritesheet texture");
-        return -1;
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
-int loadSprites(void)
+bool loadSprites(void)
 {
-    // TODO: fix this horrible function
-    int loadStatus = 0;
-
+    bool loadStatus = true;
+    int index = 0;
+    
+    
     printf("Loading sprite data...\n");
 
-    loadStatus = loadSpriteFile("data/sprite_mapping/blocks", sprites.blocksTail);
+    size_t arrayLength = 5;
+    SpriteTuple spritesToLoad[5] = {
+	{ "data/sprite_mapping/blocks", sprites.blocksTail },
+	{ "data/sprite_mapping/crates", sprites.cratesTail },
+	{ "data/sprite_mapping/environment", sprites.envTail },
+	{ "data/sprite_mapping/ground", sprites.groundTail },
+	{ "data/sprite_mapping/player", sprites.playerTail }
+    };
 
-    if (loadStatus == -1)
-        return -1;
-    
-    loadStatus = loadSpriteFile("data/sprite_mapping/crates", sprites.cratesTail);
-
-    if (loadStatus == -1)
-        return -1;
-
-    loadStatus = loadSpriteFile("data/sprite_mapping/environment", sprites.envTail);
-
-    if (loadStatus == -1)
-        return -1;
-
-    loadStatus = loadSpriteFile("data/sprite_mapping/ground", sprites.groundTail);
-
-    if (loadStatus == -1)
-        return -1;
-    
-    loadStatus = loadSpriteFile("data/sprite_mapping/player", sprites.playerTail);
+    while (loadStatus && index < arrayLength) {
+	loadStatus = loadSpriteFile(&spritesToLoad[index++]);
+    }
     
     return loadStatus;
 }
 
-int loadSpriteFile(char *filename, Sprite *spriteTail)
+bool loadSpriteFile(SpriteTuple *tuple)
 {
     FILE *fp;
     char *line = NULL;
     size_t lineSize = 100;
     Sprite *sprite;
     
-    fp = fopen(filename, "r");
+    fp = fopen(tuple->fileName, "r");
 
     if (fp == NULL) {
-       fprintf(stderr, "Error opening %s", filename); 
-       return -1;
+       fprintf(stderr, "Error opening %s", tuple->fileName); 
+       return false;
     }
     
     while ((getline(&line, &lineSize, fp)) != -1) {
         sprite = createSpriteFromLine(line);
 
         if (sprite == NULL) {
-            return -1;
+            return false;
         }
 
-        spriteTail->next = sprite;
-        spriteTail = sprite; 
+        tuple->spriteTail->next = sprite;
+        tuple->spriteTail = sprite; 
     }
 
-    return 0;
+    return true;
 }
 
 Sprite *createSpriteFromLine(char *line)
