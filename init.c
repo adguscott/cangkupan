@@ -181,7 +181,28 @@ Player *initPlayer(void)
 
     player->x = 100;
     player->y = 100;
+
     player->sprite = getSprite("player_05");
+    player->animationDown[0] = getSprite("player_06");
+    player->animationDown[1] = getSprite("player_05");
+    player->animationDown[2] = getSprite("player_07");
+    player->animationDown[3] = getSprite("player_05");
+
+    player->animationUp[0] = getSprite("player_09");
+    player->animationUp[1] = getSprite("player_08");
+    player->animationUp[2] = getSprite("player_10");
+    player->animationUp[3] = getSprite("player_08");
+
+    player->animationLeft[0] = getSprite("player_21");
+    player->animationLeft[1] = getSprite("player_20");
+    player->animationLeft[2] = getSprite("player_22");
+    player->animationLeft[3] = getSprite("player_20");
+
+    player->animationRight[0] = getSprite("player_18");
+    player->animationRight[1] = getSprite("player_17");
+    player->animationRight[2] = getSprite("player_19");
+    player->animationRight[3] = getSprite("player_17");
+    
 
     return player;
 }
