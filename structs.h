@@ -43,3 +43,9 @@ typedef struct
     Sprite *animationLeft[4];
     Sprite *animationRight[4];
 } Player;
+
+typedef struct
+{
+    char fileName[200];
+    Sprite *spriteTail;
+} SpriteTuple;
