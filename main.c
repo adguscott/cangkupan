@@ -7,6 +7,7 @@ Game game;
 Sprites sprites;
 SDL_Texture *spritesheet;
 Player *player;
+Entities entities;
 
 int main(void)
 {
@@ -15,42 +16,50 @@ int main(void)
     
     memset(&game, 0, sizeof(Game));
     memset(&sprites, 0, sizeof(Sprites));
-        
+
     sprites.blocksTail = &sprites.blocksHead;
     sprites.cratesTail = &sprites.cratesHead;
     sprites.groundTail = &sprites.groundHead;
     sprites.envTail = &sprites.envHead;
     sprites.playerTail = &sprites.playerHead;
 
+    memset(&entities, 0, sizeof(Entities));
+    entities.entityTail = &entities.entityHead;
+    
     atexit(&cleanup);
-    initSDL();
+
+    if (!initSDL()) {
+	cleanup();
+	return EXIT_FAILURE;
+    }
     
     if (!loadTexture()) {
-        fprintf(stderr, "Could not load spritesheet, exiting game.\n");
         cleanup();
-        return -1;
+        return EXIT_FAILURE;
     }
 
     if (!loadSprites()) {
-        fprintf(stderr, "Could not load sprite data, exiting game.\n");
         cleanup();
-        return -1;
+        return EXIT_FAILURE;
     }
 
     player = initPlayer();
+    initEntities();
     
     then = SDL_GetTicks();
     remainder = 0;
-    while (1) {
+    
+    while (true) {
         doInput();
 	doMovement();
         drawScene();
-        drawPlayer();
-
+	drawEntities();
+	drawPlayer();
 	capFrameRate(&then, &remainder);
         SDL_RenderPresent(game.renderer);
-	
     }
+
+    RETURN EXIT_SUCCESS;
 }
 
 void doInput(void)
@@ -59,7 +68,7 @@ void doInput(void)
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
 	case SDL_QUIT:
-	    exit(0);
+	    exit(EXIT_SUCCESS);
 	    break;
 	case SDL_KEYDOWN:
 	    movePlayer(&event.key, 1);
@@ -80,7 +89,7 @@ void movePlayer(SDL_KeyboardEvent *event, int down)
 	    player->dy = (down) ? player->dy - PLAYER_SPEED : 0;
 	}
 
-	if (event->keysym.scancode == SDL_SCANCODE_DOWN) {
+	else if (event->keysym.scancode == SDL_SCANCODE_DOWN) {
 	    player->dy = (down) ? player->dy + PLAYER_SPEED : 0;
 	}
 
@@ -116,6 +125,14 @@ void drawGround(void)
     }
 }
 
+void drawEntities(void)
+{
+    Entity *entity;
+    for (entity = entities.entityHead.next; entity != NULL; entity = entity->next) {
+	blitRect(spritesheet, entity->sprite, entity->x, entity->y);
+    }
+}
+
 void drawPlayer(void) 
 {
     int animationSpeed = SDL_GetTicks() / 150;
@@ -123,11 +140,17 @@ void drawPlayer(void)
 
     if (player->dy > 0) {
 	player->sprite = player->animationDown[index];
-    } else if (player->dy < 0) {
+    }
+
+    if (player->dy < 0) {
        	player->sprite = player->animationUp[index];
-    } else if (player->dx > 0) {
+    }
+
+    if (player->dx > 0) {
 	player->sprite = player->animationRight[index];
-    } else if (player->dx < 0) {
+    }
+
+    if (player->dx < 0) {
 	player->sprite = player->animationLeft[index];
     }
     
