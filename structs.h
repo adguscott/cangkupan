@@ -35,6 +35,11 @@ struct Entity
 
 typedef struct
 {
+   Entity entityHead, *entityTail; 
+} Entities;
+ 
+typedef struct
+{
     int x, y;
     int dx, dy;
     Sprite *sprite;
