@@ -4,9 +4,10 @@
 
 extern Game game;
 extern Sprites sprites;
+extern Entities entities;
 extern SDL_Texture *spritesheet;
 
-void initSDL(void) 
+bool initSDL(void) 
 {
     int rendererFlags, windowFlags;
     rendererFlags = SDL_RENDERER_ACCELERATED;
@@ -14,48 +15,56 @@ void initSDL(void)
     windowFlags = 0;
  
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        fprintf(stderr, "Couldn't initialise SDL: %s\n", SDL_GetError());
-        exit(1);
+	SDL_LogError(SDL_LOG_CATEGORY_VIDEO, "Couldn't initialise SDL: %s\n", SDL_GetError());
+	return false;
     }
 
     IMG_Init(IMG_INIT_PNG);
 
     game.window = SDL_CreateWindow("Cangkupan", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, windowFlags);
     if (!game.window) {
-        fprintf(stderr, "Failed to open SDL Window: %s\n", SDL_GetError());
-        exit(1);
+	SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to open SDL Window: %s\n", SDL_GetError());
+	return false;
     }
-  
+    
     // not sure what this does?
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
     
     game.renderer = SDL_CreateRenderer(game.window, -1, rendererFlags);
 
     if (!game.renderer) {
-        fprintf(stderr, "Failed to create SDL renderer: %s\n", SDL_GetError());
-        exit(1);
+	SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Failed to create SDL renderer: %s\n", SDL_GetError());
+	return false;
     }
+
+    setWindowIcon();
     
+    return true;
 }
 
 bool loadTexture(void) {
     spritesheet = IMG_LoadTexture(game.renderer, "gfx/spritesheet.png");
 
     if (spritesheet == NULL) {
-        perror("Failed to load spritesheet texture");
+	SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to load spritesheet texture\n");
         return false;
     }
 
     return true;
+}
+void setWindowIcon(void)
+{
+    SDL_Log("Setting window icon\n");
+    SDL_Surface *icon = IMG_Load("gfx/icon.png");
+    SDL_SetWindowIcon(game.window, icon);
 }
 
 bool loadSprites(void)
 {
     bool loadStatus = true;
     int index = 0;
-    
-    
-    printf("Loading sprite data...\n");
+
+    SDL_Log("Loading sprite data...\n");
 
     size_t arrayLength = 5;
     SpriteTuple spritesToLoad[5] = {
@@ -83,8 +92,8 @@ bool loadSpriteFile(SpriteTuple *tuple)
     fp = fopen(tuple->fileName, "r");
 
     if (fp == NULL) {
-       fprintf(stderr, "Error opening %s", tuple->fileName); 
-       return false;
+	SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error opening %s", tuple->fileName);
+	return false;
     }
     
     while ((getline(&line, &lineSize, fp)) != -1) {
@@ -110,12 +119,12 @@ Sprite *createSpriteFromLine(char *line)
     parseResult = sscanf(line, "%s %d %d %d %d", sprite->name, &sprite->x, &sprite->y, &sprite->w, &sprite->h);
     
     if (parseResult < 0) {
-        perror("Could not parse sprite");
-        free(sprite);
+	SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error loading sprite from line:\n%s\n", line);
+	free(sprite);
         return NULL;
     }
     
-    printf("Loading sprite: %s\n", sprite->name);
+    SDL_Log("Loading sprite: %s\n", sprite->name);
     return sprite;
 }
 
@@ -168,6 +177,7 @@ Sprite *getSprite(char *spriteName)
 
 Player *initPlayer(void)
 {
+    SDL_Log("Initialising player...");
     Player *player = malloc(sizeof(Player));
     memset(player, 0, sizeof(Player));
 
@@ -195,6 +205,19 @@ Player *initPlayer(void)
     player->animationRight[2] = getSprite("player_19");
     player->animationRight[3] = getSprite("player_17");
     
-
     return player;
+}
+
+void initEntities(void)
+{
+    SDL_Log("Loading entities...");
+    
+    Entity *entity = malloc(sizeof(Entity));
+    memset(entity, 0, sizeof(Entity));
+  
+    entity->sprite = getSprite("crate_02");
+    entity->x = entity->y = 200;
+    
+    entities.entityTail->next = entity;
+    entities.entityTail = entity;
 }
