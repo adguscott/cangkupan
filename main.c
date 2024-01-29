@@ -59,7 +59,7 @@ int main(void)
         SDL_RenderPresent(game.renderer);
     }
 
-    RETURN EXIT_SUCCESS;
+   return EXIT_SUCCESS;
 }
 
 void doInput(void)
