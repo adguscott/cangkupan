@@ -181,9 +181,6 @@ Player *initPlayer(void)
     Player *player = malloc(sizeof(Player));
     memset(player, 0, sizeof(Player));
 
-    player->x = 100;
-    player->y = 100;
-
     player->sprite = getSprite("player_05");
     player->animationDown[0] = getSprite("player_06");
     player->animationDown[1] = getSprite("player_05");
@@ -204,7 +201,15 @@ Player *initPlayer(void)
     player->animationRight[1] = getSprite("player_17");
     player->animationRight[2] = getSprite("player_19");
     player->animationRight[3] = getSprite("player_17");
-    
+
+    player->x = 64;
+    player->y = 64;
+    player->isMoving = false;
+    player->x += (64 - player->sprite->w) / 2;
+    player->y += (64 - player->sprite->h) / 2;
+
+    player->nx = player->x;
+    player->ny = player->y;
     return player;
 }
 
