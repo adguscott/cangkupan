@@ -2,6 +2,7 @@
 #include "main.h"
 #include "init.h"
 #include "draw.h"
+#include "physics.h"
 
 Game game;
 Sprites sprites;
@@ -53,6 +54,7 @@ int main(void)
         doInput();
 	doMovement();
         drawScene();
+	drawLines();
 	drawEntities();
 	drawPlayer();
 	capFrameRate(&then, &remainder);
@@ -73,9 +75,6 @@ void doInput(void)
 	case SDL_KEYDOWN:
 	    movePlayer(&event.key, 1);
 	    break;
-	case SDL_KEYUP:
-	    movePlayer(&event.key, 0);
-	    break;
 	default:
 	    break;
         }
@@ -84,29 +83,50 @@ void doInput(void)
 
 void movePlayer(SDL_KeyboardEvent *event, int down)
 {
+    if (player->isMoving) {
+	return;
+    }
+    
     if (event->repeat == 0) {
 	if (event->keysym.scancode == SDL_SCANCODE_UP) {
-	    player->dy = (down) ? player->dy - PLAYER_SPEED : 0;
+	    player->dy = (down) ? -PLAYER_SPEED : 0;
+	    player->dx = 0;
+	    player->ny = player->y - TILESIZE;
 	}
 
-	else if (event->keysym.scancode == SDL_SCANCODE_DOWN) {
-	    player->dy = (down) ? player->dy + PLAYER_SPEED : 0;
+	if (event->keysym.scancode == SDL_SCANCODE_DOWN) {
+	    player->dy = (down) ? PLAYER_SPEED : 0;
+    	    player->dx = 0;
+	    player->ny = player->y + TILESIZE;
 	}
 
 	if (event->keysym.scancode == SDL_SCANCODE_LEFT) {
-	    player->dx = (down) ? player->dx - PLAYER_SPEED : 0;
+	    player->dx = (down) ? -PLAYER_SPEED : 0;
+	    player->dy = 0;
+	    player->nx = player->x - TILESIZE;
 	}
 
 	if (event->keysym.scancode == SDL_SCANCODE_RIGHT) {
-	    player->dx = (down) ? player->dx + PLAYER_SPEED : 0;
+	    player->dx = (down) ? PLAYER_SPEED : 0;
+	    player->dy = 0;
+	    player->nx = player->x + TILESIZE;
 	}
+	
+	player->isMoving = player->x != player->nx || player->y != player->ny;
     }
 }
 
 void doMovement(void)
 {
-    player->x += player->dx;
-    player->y += player->dy;
+    player->isMoving = player->x != player->nx || player->y != player->ny;
+    if (player->isMoving) {
+	player->x += player->dx;
+	player->y += player->dy;
+    } else {
+	player->dx = player->dy = 0;
+    }
+
+    outOfBounds();
 }
 
 void drawScene(void)
@@ -115,11 +135,28 @@ void drawScene(void)
     drawGround();
 }
 
+void drawLines(void)
+{
+    SDL_SetRenderDrawBlendMode(game.renderer, SDL_BLENDMODE_BLEND);
+    
+    SDL_SetRenderDrawColor(game.renderer, 255, 255, 255, 20);
+    
+    for (int y = 64; y < SCREEN_WIDTH; y += 64) {
+	SDL_RenderDrawLine(game.renderer, 0, y, SCREEN_WIDTH, y);
+    }
+
+    for (int x = 64; x < SCREEN_WIDTH; x += 64) {
+	SDL_RenderDrawLine(game.renderer, x, 0, x, SCREEN_HEIGHT);
+    }
+    
+    SDL_SetRenderDrawBlendMode(game.renderer, SDL_BLENDMODE_NONE);
+}
+
 void drawGround(void)
 {
     Sprite *groundSprite = getSprite("ground_06");
-    for(int x = 0; x < SCREEN_WIDTH; x += 64) {
-	for (int y = 0; y < SCREEN_HEIGHT; y += 64) {
+    for(int x = 0; x < SCREEN_WIDTH; x += TILESIZE) {
+	for (int y = 0; y < SCREEN_HEIGHT; y += TILESIZE) {
 	    blitRect(spritesheet, groundSprite, x, y);
 	}
     }
@@ -135,7 +172,7 @@ void drawEntities(void)
 
 void drawPlayer(void) 
 {
-    int animationSpeed = SDL_GetTicks() / 150;
+    int animationSpeed = SDL_GetTicks() / 100;
     int index = animationSpeed % 4;
 
     if (player->dy > 0) {
@@ -179,4 +216,31 @@ void capFrameRate(long *then, float *remainder)
 	*remainder += 0.667;
 
 	*then = SDL_GetTicks();
+}
+
+void outOfBounds(void)
+{
+    if (player->x + player->sprite->w > SCREEN_WIDTH) {
+	centreToTile(&player->x, &player->y, player->sprite->w, player->sprite->h, SCREEN_WIDTH - TILESIZE, player->y);
+	player->nx = player->x;
+	player->ny = player->y;
+    }
+
+    if (player->x < 0) {
+	centreToTile(&player->x, &player->y, player->sprite->w, player->sprite->h, 0, player->y);
+	player->nx = player->x;
+	player->ny = player->y;
+    }
+
+    if (player->y + player->sprite->h > SCREEN_HEIGHT) {
+	centreToTile(&player->x, &player->y, player->sprite->w, player->sprite->h, player->x, SCREEN_HEIGHT - TILESIZE);
+	player->nx = player->x;	
+	player->ny = player->y;
+    }
+
+    if (player->y < 0) {
+	centreToTile(&player->x, &player->y, player->sprite->w, player->sprite->h, player->x, 0);
+	player->nx = player->x;	
+	player->ny = player->y;
+    }
 }

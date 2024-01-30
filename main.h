@@ -5,4 +5,6 @@ void drawEntities(void);
 void drawPlayer(void);
 void drawScene(void);
 void drawGround(void);
+void drawLines(void);
 void capFrameRate(long *then, float *remainder);
+void outOfBounds(void);
