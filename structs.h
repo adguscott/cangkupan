@@ -41,7 +41,9 @@ typedef struct
 typedef struct
 {
     int x, y;
+    int nx, ny;
     int dx, dy;
+    bool isMoving;
     Sprite *sprite;
     Sprite *animationUp[4];
     Sprite *animationDown[4];
