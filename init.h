@@ -3,6 +3,7 @@ Sprite *createSpriteFromLine(char *line);
 Sprite *getSprite(char *spriteName);
 void initEntity(char *spriteName, int flags, int x, int y);
 Player *initPlayer(void);
+void initButton(char *spriteName, int x, int y);
 bool initSDL(void);
 bool loadSprites(void);
 bool loadSpriteFile(SpriteTuple *tuple);

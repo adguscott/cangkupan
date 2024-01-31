@@ -5,6 +5,7 @@
 extern Game game;
 extern Sprites sprites;
 extern Entities entities;
+extern Buttons buttons;
 extern SDL_Texture *spritesheet;
 
 bool initSDL(void) 
@@ -214,8 +215,6 @@ Player *initPlayer(void)
 
 void initEntity(char *spriteName, int flags, int x, int y)
 {
-    SDL_Log("Loading entities...");
-    
     Entity *entity = malloc(sizeof(Entity));
     memset(entity, 0, sizeof(Entity));
   
@@ -226,4 +225,18 @@ void initEntity(char *spriteName, int flags, int x, int y)
     entity->flags = flags;
     entities.entityTail->next = entity;
     entities.entityTail = entity;
+}
+
+void initButton(char *spriteName, int x, int y)
+{
+    Button *button = malloc(sizeof(Button));
+    memset(button, 0, sizeof(Button));
+
+    button->sprite = getSprite(spriteName);
+    button->x = x;
+    button->y = y;
+    button->switched = false;
+
+    buttons.buttonTail->next = button;
+    buttons.buttonTail = button;
 }
