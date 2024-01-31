@@ -1,5 +1,6 @@
 typedef struct Sprite Sprite;
 typedef struct Entity Entity;
+typedef struct Button Button;
 
 typedef struct
 {
@@ -38,7 +39,20 @@ typedef struct
 {
    Entity entityHead, *entityTail; 
 } Entities;
- 
+
+struct Button
+{
+    int x, y;
+    Sprite *sprite;
+    bool switched;
+    Button *next;
+};
+
+typedef struct 
+{
+    Button buttonHead, *buttonTail;
+} Buttons;
+
 typedef struct
 {
     int x, y;
@@ -55,6 +69,7 @@ typedef struct
 {
     Sprite *groundSprite;
 } Level;
+
 typedef struct
 {
     char fileName[200];
