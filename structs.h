@@ -27,6 +27,7 @@ typedef struct
 struct Entity
 {
     int x, y;
+    int nx, ny;
     int dx, dy;
     Sprite *sprite;
     long flags;
@@ -43,7 +44,6 @@ typedef struct
     int x, y;
     int nx, ny;
     int dx, dy;
-    bool isMoving;
     Sprite *sprite;
     Sprite *animationUp[4];
     Sprite *animationDown[4];
@@ -51,6 +51,10 @@ typedef struct
     Sprite *animationRight[4];
 } Player;
 
+typedef struct
+{
+    Sprite *groundSprite;
+} Level;
 typedef struct
 {
     char fileName[200];
