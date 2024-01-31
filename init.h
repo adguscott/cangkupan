@@ -1,7 +1,7 @@
 void cleanup(void);
 Sprite *createSpriteFromLine(char *line);
 Sprite *getSprite(char *spriteName);
-void initEntities(void);
+void initEntity(char *spriteName, int flags, int x, int y);
 Player *initPlayer(void);
 bool initSDL(void);
 bool loadSprites(void);

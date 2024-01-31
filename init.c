@@ -204,7 +204,6 @@ Player *initPlayer(void)
 
     player->x = 64;
     player->y = 64;
-    player->isMoving = false;
     player->x += (64 - player->sprite->w) / 2;
     player->y += (64 - player->sprite->h) / 2;
 
@@ -213,16 +212,18 @@ Player *initPlayer(void)
     return player;
 }
 
-void initEntities(void)
+void initEntity(char *spriteName, int flags, int x, int y)
 {
     SDL_Log("Loading entities...");
     
     Entity *entity = malloc(sizeof(Entity));
     memset(entity, 0, sizeof(Entity));
   
-    entity->sprite = getSprite("crate_02");
-    entity->x = entity->y = 200;
+    entity->sprite = getSprite(spriteName);
+    entity->x = entity->nx = x;
+    entity->y = entity->ny = y;
     
+    entity->flags = flags;
     entities.entityTail->next = entity;
     entities.entityTail = entity;
 }
