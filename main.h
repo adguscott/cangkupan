@@ -1,5 +1,6 @@
 void doInput(void);
 void doMovement(void);
+void doEntities(void);
 void movePlayer(SDL_KeyboardEvent *event, int down);
 void drawEntities(void);
 void drawPlayer(void);
@@ -8,3 +9,6 @@ void drawGround(void);
 void drawLines(void);
 void capFrameRate(long *then, float *remainder);
 void outOfBounds(void);
+void checkCollision(void);
+bool checkCanMove(Entity *entity, int nx, int ny);
+void stopAndRecentre(void);
