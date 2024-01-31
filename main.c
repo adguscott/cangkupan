@@ -9,6 +9,7 @@ Sprites sprites;
 SDL_Texture *spritesheet;
 Player *player;
 Entities entities;
+Buttons buttons;
 Level level;
 
 int main(void)
@@ -27,6 +28,9 @@ int main(void)
 
     memset(&entities, 0, sizeof(Entities));
     entities.entityTail = &entities.entityHead;
+
+    memset(&buttons, 0, sizeof(buttons));
+    buttons.buttonTail = &buttons.buttonHead;
 
     memset(&level, 0, sizeof(Level));
     
@@ -52,7 +56,7 @@ int main(void)
     player = initPlayer();
     initEntity("crate_02", IS_SOLID | IS_PUSHABLE, 192, 192);
     initEntity("crate_03", IS_SOLID, 320, 320);
-    
+    initButton("environment_01", 384, 385);  
     then = SDL_GetTicks();
     remainder = 0;
     
@@ -62,6 +66,7 @@ int main(void)
 	doEntities();
         drawScene();
 	drawLines();
+    drawButtons();
 	drawEntities();
 	drawPlayer();
 	capFrameRate(&then, &remainder);
@@ -263,6 +268,14 @@ void drawGround(void)
 	for (int y = 0; y < SCREEN_HEIGHT; y += TILESIZE) {
 	    blitRect(spritesheet, level.groundSprite, x, y);
 	}
+    }
+}
+
+void drawButtons(void)
+{
+    Button *button;
+    for (button = buttons.buttonHead.next; button != NULL; button = button->next) {
+    	blitRect(spritesheet, button->sprite, button->x, button->y);
     }
 }
 

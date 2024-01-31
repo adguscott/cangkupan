@@ -3,6 +3,7 @@ void doMovement(void);
 void doEntities(void);
 void movePlayer(SDL_KeyboardEvent *event, int down);
 void drawEntities(void);
+void drawButtons(void);
 void drawPlayer(void);
 void drawScene(void);
 void drawGround(void);
