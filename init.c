@@ -3,11 +3,7 @@
 #include "init.h"
 
 extern Game game;
-extern Sprites sprites;
-extern Entities entities;
-extern Buttons buttons;
-extern SDL_Texture *spritesheet;
-
+extern Level level;
 bool initSDL(void) 
 {
     int rendererFlags, windowFlags;
@@ -44,9 +40,9 @@ bool initSDL(void)
 }
 
 bool loadTexture(void) {
-    spritesheet = IMG_LoadTexture(game.renderer, "gfx/spritesheet.png");
+    game.spritesheet = IMG_LoadTexture(game.renderer, "gfx/spritesheet.png");
 
-    if (spritesheet == NULL) {
+    if (game.spritesheet == NULL) {
 	SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to load spritesheet texture\n");
         return false;
     }
@@ -69,11 +65,11 @@ bool loadSprites(void)
 
     size_t arrayLength = 5;
     SpriteTuple spritesToLoad[5] = {
-	{ "data/sprite_mapping/blocks", sprites.blocksTail },
-	{ "data/sprite_mapping/crates", sprites.cratesTail },
-	{ "data/sprite_mapping/environment", sprites.envTail },
-	{ "data/sprite_mapping/ground", sprites.groundTail },
-	{ "data/sprite_mapping/player", sprites.playerTail }
+	{ "data/sprite_mapping/blocks", game.sprites.blocksTail },
+	{ "data/sprite_mapping/crates", game.sprites.cratesTail },
+	{ "data/sprite_mapping/environment", game.sprites.envTail },
+	{ "data/sprite_mapping/ground", game.sprites.groundTail },
+	{ "data/sprite_mapping/player", game.sprites.playerTail }
     };
 
     while (loadStatus && index < arrayLength) {
@@ -132,42 +128,55 @@ Sprite *createSpriteFromLine(char *line)
 void cleanup(void)
 {
     SDL_DestroyRenderer(game.renderer);
-
     SDL_DestroyWindow(game.window);
     
     IMG_Quit();
     SDL_Quit();
 }
 
+void resetLevel(void)
+{
+    Entity *e;
+    
+    while (level.entities.entityHead.next) {
+	e = level.entities.entityHead.next;
+	level.entities.entityHead.next = e->next;
+	free(e);
+    }
+    
+    level.entities.entityTail = &level.entities.entityHead;
+    level.switches = 0;
+    loadMap();
+}
 Sprite *getSprite(char *spriteName)
 {
     Sprite *sprite;
     
-    for (sprite = sprites.blocksHead.next; sprite != NULL; sprite = sprite->next) {
+    for (sprite = game.sprites.blocksHead.next; sprite != NULL; sprite = sprite->next) {
 	if (strcmp(sprite->name, spriteName) == 0) {
 	    return sprite;
 	}
     }
 
-    for (sprite = sprites.cratesHead.next; sprite != NULL; sprite = sprite->next) {
+    for (sprite = game.sprites.cratesHead.next; sprite != NULL; sprite = sprite->next) {
 	if (strcmp(sprite->name, spriteName) == 0) {
 	    return sprite;
 	}
     }
 
-    for (sprite = sprites.groundHead.next; sprite != NULL; sprite = sprite->next) {
+    for (sprite = game.sprites.groundHead.next; sprite != NULL; sprite = sprite->next) {
 	if (strcmp(sprite->name, spriteName) == 0) {
 	    return sprite;
 	}
     }
     
-    for (sprite = sprites.envHead.next; sprite != NULL; sprite = sprite->next) {
+    for (sprite = game.sprites.envHead.next; sprite != NULL; sprite = sprite->next) {
 	if (strcmp(sprite->name, spriteName) == 0) {
 	    return sprite;
 	}
     }
     
-    for (sprite = sprites.playerHead.next; sprite != NULL; sprite = sprite->next) {
+    for (sprite = game.sprites.playerHead.next; sprite != NULL; sprite = sprite->next) {
 	if (strcmp(sprite->name, spriteName) == 0) {
 	    return sprite;
 	}
@@ -176,12 +185,12 @@ Sprite *getSprite(char *spriteName)
     return NULL;
 }
 
-Player *initPlayer(void)
+void initPlayer(int x, int y)
 {
     SDL_Log("Initialising player...");
     Player *player = malloc(sizeof(Player));
     memset(player, 0, sizeof(Player));
-
+    
     player->sprite = getSprite("player_05");
     player->animationDown[0] = getSprite("player_06");
     player->animationDown[1] = getSprite("player_05");
@@ -203,14 +212,17 @@ Player *initPlayer(void)
     player->animationRight[2] = getSprite("player_19");
     player->animationRight[3] = getSprite("player_17");
 
-    player->x = 64;
-    player->y = 64;
-    player->x += (64 - player->sprite->w) / 2;
-    player->y += (64 - player->sprite->h) / 2;
+    player->x = x + ((TILESIZE - player->sprite->w) / 2);
+    player->y = y + ((TILESIZE - player->sprite->h) / 2);
 
     player->nx = player->x;
     player->ny = player->y;
-    return player;
+
+    if (level.player) {
+	free(level.player);
+    }
+    
+    level.player = player;
 }
 
 void initEntity(char *spriteName, int flags, int x, int y)
@@ -219,24 +231,84 @@ void initEntity(char *spriteName, int flags, int x, int y)
     memset(entity, 0, sizeof(Entity));
   
     entity->sprite = getSprite(spriteName);
-    entity->x = entity->nx = x;
-    entity->y = entity->ny = y;
+    
+    if (entity->sprite->w < TILESIZE) {
+	entity->x = entity->nx = x + ((TILESIZE - entity->sprite->w) / 2);
+    } else {
+	entity->x = entity->nx = x;
+    }
+    
+    if (entity->sprite->h < TILESIZE) {
+	entity->y = entity->ny = y + ((TILESIZE - entity->sprite->h) / 2);
+    } else {
+	entity->y = entity->ny = y;
+    }
     
     entity->flags = flags;
-    entities.entityTail->next = entity;
-    entities.entityTail = entity;
+    level.entities.entityTail->next = entity;
+    level.entities.entityTail = entity;
+
 }
 
-void initButton(char *spriteName, int x, int y)
+void initMap(void)
 {
-    Button *button = malloc(sizeof(Button));
-    memset(button, 0, sizeof(Button));
-
-    button->sprite = getSprite(spriteName);
-    button->x = x;
-    button->y = y;
-    button->switched = false;
-
-    buttons.buttonTail->next = button;
-    buttons.buttonTail = button;
+   char map[8][9] = { { '0', '1', '1', '1', '1', '1', '1', '1', '1' },
+		      { '0', '1', '.', '1', '.', '0', '*', '0', '1' },
+		      { '1', '1', 'p', '1', '1', '1', '0', '0', '1' },
+		      { '1', '0', '*', '0', '1', '0', 'x', '0', '1' },
+		      { '1', '0', '0', '*', '*', '.', '*', '.', '1' },
+		      { '1', '0', '0', '.', '0', '0', '*', '0', '1' },
+		      { '1', '1', '1', '1', '1', '1', '.', '0', '1' },
+		      { '0', '0', '0', '0', '0', '1', '1', '1', '1' }
+   };
+   
+   memcpy(level.map, map, sizeof(map));
 }
+
+bool loadLevel(void)
+{
+    initMap();
+    return loadMap();
+}
+
+bool loadMap(void)
+{
+    int x, y;
+    x = y = 0;
+    for (int i = 0; i < 8; i++) {
+	y = 0;
+	for (int j = 0; j < 9; j++) {
+	    loadEntity(level.map[i][j], x, y);
+	    y += TILESIZE;
+	}
+	x += TILESIZE;
+    }
+    return true;
+}
+
+void loadEntity(char entChar, int x, int y)
+{
+    switch (entChar) {
+    case '0':
+	return;
+	break;
+    case '1':
+	initEntity("block_08", IS_SOLID, x, y);
+	break;
+    case '*':
+	initEntity("crate_02", IS_SOLID | IS_PUSHABLE, x, y);
+	break;
+    case 'x':
+	initEntity("crate_02", IS_SOLID | IS_PUSHABLE, x, y);
+    case '.':
+	initEntity("environment_02", IS_SWITCH, x, y);
+	level.switches += 1;
+	break;
+    case 'p':
+	initPlayer(x, y);
+	break;
+    default:
+	return;
+    }
+}
+    
