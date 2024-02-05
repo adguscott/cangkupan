@@ -5,12 +5,9 @@
 #include "physics.h"
 
 Game game;
-Sprites sprites;
-SDL_Texture *spritesheet;
-Player *player;
-Entities entities;
-Buttons buttons;
 Level level;
+Sprite *darkCrate;
+Sprite *lightCrate;
 
 int main(void)
 {
@@ -18,21 +15,15 @@ int main(void)
     float remainder;
     
     memset(&game, 0, sizeof(Game));
-    memset(&sprites, 0, sizeof(Sprites));
 
-    sprites.blocksTail = &sprites.blocksHead;
-    sprites.cratesTail = &sprites.cratesHead;
-    sprites.groundTail = &sprites.groundHead;
-    sprites.envTail = &sprites.envHead;
-    sprites.playerTail = &sprites.playerHead;
-
-    memset(&entities, 0, sizeof(Entities));
-    entities.entityTail = &entities.entityHead;
-
-    memset(&buttons, 0, sizeof(buttons));
-    buttons.buttonTail = &buttons.buttonHead;
+    game.sprites.blocksTail = &game.sprites.blocksHead;
+    game.sprites.cratesTail = &game.sprites.cratesHead;
+    game.sprites.groundTail = &game.sprites.groundHead;
+    game.sprites.envTail = &game.sprites.envHead;
+    game.sprites.playerTail = &game.sprites.playerHead;
 
     memset(&level, 0, sizeof(Level));
+    level.entities.entityTail = &level.entities.entityHead;
     
     atexit(&cleanup);
 
@@ -51,12 +42,12 @@ int main(void)
         return EXIT_FAILURE;
     }
     
-    level.groundSprite = getSprite("ground_06");
+    loadLevel();
     
-    player = initPlayer();
-    initEntity("crate_02", IS_SOLID | IS_PUSHABLE, 192, 192);
-    initEntity("crate_03", IS_SOLID, 320, 320);
-    initButton("environment_01", 384, 385);  
+    level.groundSprite = getSprite("ground_06");
+    darkCrate = getSprite("crate_12");
+    lightCrate = getSprite("crate_02");
+
     then = SDL_GetTicks();
     remainder = 0;
     
@@ -66,7 +57,6 @@ int main(void)
 	doEntities();
         drawScene();
 	drawLines();
-    drawButtons();
 	drawEntities();
 	drawPlayer();
 	capFrameRate(&then, &remainder);
@@ -85,6 +75,10 @@ void doInput(void)
 	    exit(EXIT_SUCCESS);
 	    break;
 	case SDL_KEYDOWN:
+	    if (event.key.keysym.scancode == SDL_SCANCODE_R) {
+		resetLevel();
+		return;
+	    }
 	    movePlayer(&event.key, 1);
 	    break;
 	default:
@@ -95,70 +89,100 @@ void doInput(void)
 
 void movePlayer(SDL_KeyboardEvent *event, int down)
 {
-    if (playerMoving(player)) {
+    if (playerMoving(level.player)) {
 	return;
     }
     
     if (event->repeat == 0) {
 	if (event->keysym.scancode == SDL_SCANCODE_UP) {
-	    player->dy = (down) ? -PLAYER_SPEED : 0;
-	    player->dx = 0;
-	    player->ny = player->y - TILESIZE;
+	    level.player->dy = (down) ? -PLAYER_SPEED : 0;
+	    level.player->dx = 0;
+	    level.player->ny = level.player->y - TILESIZE;
 	}
 
 	if (event->keysym.scancode == SDL_SCANCODE_DOWN) {
-	    player->dy = (down) ? PLAYER_SPEED : 0;
-    	    player->dx = 0;
-	    player->ny = player->y + TILESIZE;
+	    level.player->dy = (down) ? PLAYER_SPEED : 0;
+    	    level.player->dx = 0;
+	    level.player->ny = level.player->y + TILESIZE;
 	}
 
 	if (event->keysym.scancode == SDL_SCANCODE_LEFT) {
-	    player->dx = (down) ? -PLAYER_SPEED : 0;
-	    player->dy = 0;
-	    player->nx = player->x - TILESIZE;
+	    level.player->dx = (down) ? -PLAYER_SPEED : 0;
+	    level.player->dy = 0;
+	    level.player->nx = level.player->x - TILESIZE;
 	}
 
 	if (event->keysym.scancode == SDL_SCANCODE_RIGHT) {
-	    player->dx = (down) ? PLAYER_SPEED : 0;
-	    player->dy = 0;
-	    player->nx = player->x + TILESIZE;
+	    level.player->dx = (down) ? PLAYER_SPEED : 0;
+	    level.player->dy = 0;
+	    level.player->nx = level.player->x + TILESIZE;
 	}
     }
 }
 
 void doMovement(void)
 {
-    if (playerMoving(player)) {
-	player->x += player->dx;
-	player->y += player->dy;
+    if (playerMoving(level.player)) {
+	level.player->x += level.player->dx;
+	level.player->y += level.player->dy;
     } else {
-	player->dx = player->dy = 0;
+	level.player->dx = level.player->dy = 0;
     }
 
     checkCollision();
     outOfBounds();
  }
 
+
 void doEntities(void)
 {
     Entity *e;
-    for (e = entities.entityHead.next; e != NULL; e = e->next) {
+    int switched = 0;
+    for (e = level.entities.entityHead.next; e != NULL; e = e->next) {
+	if (!(e->flags & IS_PUSHABLE))
+	    continue;
+	    
 	if (entityMoving(e)) {
 	    e->x += e->dx;
 	    e->y += e->dy;
 	} else {
 	    e->dx = e->dy = 0;
 	}
+
+	if (onSwitch(e)) {
+	    switched += 1;
+	    e->sprite = darkCrate;
+	} else {
+	    e->sprite = lightCrate;
+	}
+
+    }
+    
+    if (switched == level.switches) {
+	exit(1);
     }
 }
 
+bool onSwitch(Entity *e)
+{
+    Entity *s;
+    for (s = level.entities.entityHead.next; s != NULL; s = s->next) {
+	if (!(s->flags & IS_SWITCH))
+	    continue;
+	
+	if (switched(e, s)) {
+	    return true;
+	}
+    }
+    return false;
+}
 void checkCollision(void)
 {
     bool collided = false;
     Entity *e;
-    for (e = entities.entityHead.next; e != NULL; e = e->next) {
-	collided = (collision(player->x, player->y,
-		      player->sprite->w, player->sprite->h,
+    for (e = level.entities.entityHead.next; e != NULL; e = e->next) {
+	collided = (collision(level.player->x, level.player->y,
+		      level.player->sprite->w, level.player->sprite->h,
 				    e->x, e->y, e->sprite->w, e->sprite->h));
 	
 	if (collided) {
@@ -168,23 +192,23 @@ void checkCollision(void)
 			int nx = e->x;
 			int ny = e->y;
 			
-			// update nx based on direction player moving
-			if (player->dx > 0) {
+			// update nx based on direction level.player moving
+			if (level.player->dx > 0) {
 			    nx = e->nx + TILESIZE;
-			} else if(player->dx < 0) {
+			} else if(level.player->dx < 0) {
 			    nx = e->nx - TILESIZE;
 			}
 
-			// update ny based on direction player moving
-			if (player->dy > 0) {
+			// update ny based on direction level.player moving
+			if (level.player->dy > 0) {
 			    ny = e->ny + TILESIZE;
-			} else if(player->dy < 0) {
+			} else if(level.player->dy < 0) {
 			    ny = e->ny - TILESIZE;
 			}
 
 			if (checkCanMove(e, nx, ny)) {
-			    e->dx = player->dx;
-			    e->dy = player->dy;
+			    e->dx = level.player->dx;
+			    e->dy = level.player->dy;
 			    e->nx = nx;
 			    e->ny = ny;
 			} else {
@@ -202,19 +226,19 @@ void checkCollision(void)
 
 void stopAndRecentre(void)
 {
-    // if object IS_SOLID and !IS_PUSHABLE, stop player moving and recenter position
-    if (player->dx != 0) {
-	player->nx = player->x = player->x - player->dx;
-	player->dx = 0;
+    // if object IS_SOLID and !IS_PUSHABLE, stop level.player moving and recenter position
+    if (level.player->dx != 0) {
+	level.player->nx = level.player->x = level.player->x - level.player->dx;
+	level.player->dx = 0;
     } else {
-	player->ny = player->y = player->y - player->dy;
-	player->dy = 0;
+	level.player->ny = level.player->y = level.player->y - level.player->dy;
+	level.player->dy = 0;
     }
     
-    centreToTile(&player->x, &player->y, player->sprite->w, player->sprite->h, player->x, player->y);
+    centreToTile(&level.player->x, &level.player->y, level.player->sprite->w, level.player->sprite->h, level.player->x, level.player->y);
     
-    player->nx = player->x;
-    player->ny = player->y;
+    level.player->nx = level.player->x;
+    level.player->ny = level.player->y;
 }
 
 bool checkCanMove(Entity *entity, int nx, int ny)
@@ -222,8 +246,8 @@ bool checkCanMove(Entity *entity, int nx, int ny)
     bool canMove = true;
     Entity *e;
 
-    for (e = entities.entityHead.next; e != NULL; e = e->next) {
-	if (e == entity) {
+    for (e = level.entities.entityHead.next; e != NULL; e = e->next) {
+	if (e == entity || !(e->flags & IS_SOLID)) {
 	    continue;
 	}
 	
@@ -266,25 +290,29 @@ void drawGround(void)
 {
     for(int x = 0; x < SCREEN_WIDTH; x += TILESIZE) {
 	for (int y = 0; y < SCREEN_HEIGHT; y += TILESIZE) {
-	    blitRect(spritesheet, level.groundSprite, x, y);
+	    blitRect(game.spritesheet, level.groundSprite, x, y);
 	}
-    }
-}
-
-void drawButtons(void)
-{
-    Button *button;
-    for (button = buttons.buttonHead.next; button != NULL; button = button->next) {
-    	blitRect(spritesheet, button->sprite, button->x, button->y);
     }
 }
 
 void drawEntities(void)
 {
     Entity *entity;
-    for (entity = entities.entityHead.next; entity != NULL; entity = entity->next) {
-	blitRect(spritesheet, entity->sprite, entity->x, entity->y);
+    for (entity = level.entities.entityHead.next; entity != NULL; entity = entity->next) {
+	if (!(entity->flags & IS_SWITCH))
+	    continue;
+	
+	blitRect(game.spritesheet, entity->sprite, entity->x, entity->y);
     }
+    
+    for (entity = level.entities.entityHead.next; entity != NULL; entity = entity->next) {
+	if (entity->flags & IS_SWITCH)
+	    continue;
+	
+	blitRect(game.spritesheet, entity->sprite, entity->x, entity->y);
+    }
+
+    
 }
 
 void drawPlayer(void) 
@@ -292,23 +320,23 @@ void drawPlayer(void)
     int animationSpeed = SDL_GetTicks() / 120;
     int index = animationSpeed % 4;
 
-    if (player->dy > 0) {
-	player->sprite = player->animationDown[index];
+    if (level.player->dy > 0) {
+	level.player->sprite = level.player->animationDown[index];
     }
 
-    if (player->dy < 0) {
-       	player->sprite = player->animationUp[index];
+    if (level.player->dy < 0) {
+       	level.player->sprite = level.player->animationUp[index];
     }
 
-    if (player->dx > 0) {
-	player->sprite = player->animationRight[index];
+    if (level.player->dx > 0) {
+	level.player->sprite = level.player->animationRight[index];
     }
 
-    if (player->dx < 0) {
-	player->sprite = player->animationLeft[index];
+    if (level.player->dx < 0) {
+	level.player->sprite = level.player->animationLeft[index];
     }
     
-    blitRect(spritesheet, player->sprite, player->x, player->y);
+    blitRect(game.spritesheet, level.player->sprite, level.player->x, level.player->y);
 }
 
 void capFrameRate(long *then, float *remainder)
@@ -337,28 +365,28 @@ void capFrameRate(long *then, float *remainder)
 
 void outOfBounds(void)
 {
-    // if player goes beyond bounds of screen, reset position to nearest tile
-    if (player->x + player->sprite->w > SCREEN_WIDTH) {
-	centreToTile(&player->x, &player->y, player->sprite->w, player->sprite->h, SCREEN_WIDTH - TILESIZE, player->y);
-	player->nx = player->x;
-	player->ny = player->y;
+    // if level.player goes beyond bounds of screen, reset position to nearest tile
+    if (level.player->x + level.player->sprite->w > SCREEN_WIDTH) {
+	centreToTile(&level.player->x, &level.player->y, level.player->sprite->w, level.player->sprite->h, SCREEN_WIDTH - TILESIZE, level.player->y);
+	level.player->nx = level.player->x;
+	level.player->ny = level.player->y;
     }
 
-    if (player->x < 0) {
-	centreToTile(&player->x, &player->y, player->sprite->w, player->sprite->h, 0, player->y);
-	player->nx = player->x;
-	player->ny = player->y;
+    if (level.player->x < 0) {
+	centreToTile(&level.player->x, &level.player->y, level.player->sprite->w, level.player->sprite->h, 0, level.player->y);
+	level.player->nx = level.player->x;
+	level.player->ny = level.player->y;
     }
 
-    if (player->y + player->sprite->h > SCREEN_HEIGHT) {
-	centreToTile(&player->x, &player->y, player->sprite->w, player->sprite->h, player->x, SCREEN_HEIGHT - TILESIZE);
-	player->nx = player->x;	
-	player->ny = player->y;
+    if (level.player->y + level.player->sprite->h > SCREEN_HEIGHT) {
+	centreToTile(&level.player->x, &level.player->y, level.player->sprite->w, level.player->sprite->h, level.player->x, SCREEN_HEIGHT - TILESIZE);
+	level.player->nx = level.player->x;	
+	level.player->ny = level.player->y;
     }
 
-    if (player->y < 0) {
-	centreToTile(&player->x, &player->y, player->sprite->w, player->sprite->h, player->x, 0);
-	player->nx = player->x;	
-	player->ny = player->y;
+    if (level.player->y < 0) {
+	centreToTile(&level.player->x, &level.player->y, level.player->sprite->w, level.player->sprite->h, level.player->x, 0);
+	level.player->nx = level.player->x;	
+	level.player->ny = level.player->y;
     }
 }
