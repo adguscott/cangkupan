@@ -34,3 +34,10 @@ bool entityMoving(Entity *entity)
     return entity->x != entity->nx || entity->y != entity->ny;
 }
 
+bool switched(Entity *crate, Entity *s)
+{
+    return crate->x <= s->x
+	&& (crate->x + crate->sprite->w) >= (s->x + s->sprite->w)
+	&& crate->y <= s->y
+	&& (crate->y + crate->sprite->h) >= (s->y + s->sprite->h);
+}

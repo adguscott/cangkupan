@@ -3,3 +3,4 @@ void centreToTile(int *x, int *y, int width, int height, int nx, int ny);
 int getCentre(int dim);
 bool playerMoving(Player *player);
 bool entityMoving(Entity *entity);
+bool switched(Entity *crate, Entity *s);
