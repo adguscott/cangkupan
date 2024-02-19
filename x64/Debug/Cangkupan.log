@@ -1,0 +1,5 @@
+﻿  main.c
+C:\Users\adgus\Programming\cangkupan\main.c(13,1): warning C4026: function declared with formal parameter list
+C:\Users\adgus\Programming\cangkupan\main.c(513,12): warning C4244: '=': conversion from 'float' to 'long', possible loss of data
+C:\Users\adgus\Programming\cangkupan\main.c(527,21): warning C4305: '+=': truncation from 'double' to 'float'
+  Cangkupan.vcxproj -> C:\Users\adgus\Programming\cangkupan\x64\Debug\Cangkupan.exe

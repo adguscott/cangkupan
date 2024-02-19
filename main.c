@@ -27,17 +27,20 @@ int main(void)
 
 	atexit(&cleanup);
 
-	if (!initSDL()) {
+	if (!initSDL())
+	{
 		cleanup();
 		return EXIT_FAILURE;
 	}
 
-	if (!loadTexture()) {
+	if (!loadTexture())
+	{
 		cleanup();
 		return EXIT_FAILURE;
 	}
 
-	if (!loadSprites()) {
+	if (!loadSprites())
+	{
 		cleanup();
 		return EXIT_FAILURE;
 	}
@@ -51,14 +54,26 @@ int main(void)
 	then = SDL_GetTicks();
 	remainder = 0;
 
-	while (true) {
+	while (true)
+	{
 		doInput();
-		doMovement();
-		doEntities();
-		drawScene();
-		drawLines();
-		drawEntities();
-		drawPlayer();
+
+		switch (game.mode)
+		{
+			case PLAYING:
+				doGame();
+				break;
+			case MAINMENU:
+				doMainMenu();
+				break;
+			case PAUSED:
+				doPauseMenu();
+				break;
+		}
+
+
+
+		getScreenDims();
 		capFrameRate(&then, &remainder);
 		SDL_RenderPresent(game.renderer);
 	}
@@ -66,6 +81,75 @@ int main(void)
 	return EXIT_SUCCESS;
 }
 
+void doPauseMenu(void)
+{
+	drawScene();
+	drawEntities();
+	drawPlayer();
+	SDL_SetRenderDrawBlendMode(game.renderer, SDL_BLENDMODE_BLEND);
+	SDL_SetRenderDrawColor(game.renderer, 0, 0, 0, 100);
+	SDL_RenderFillRectF(game.renderer, NULL);
+	SDL_SetRenderDrawBlendMode(game.renderer, SDL_BLENDMODE_NONE);
+	drawText("PAUSED", 32, true, true, 0, 0);
+}
+
+void doMainMenu(void)
+{
+	int x, y;
+	SDL_Rect dest;
+
+	if (Mix_PlayingMusic() == 0)
+	{
+		Mix_PlayMusic(game.mainMenu.music, -1);
+	}
+
+	SDL_SetRenderDrawColor(game.renderer, 51, 51, 51, 255);
+	SDL_RenderClear(game.renderer);
+	SDL_QueryTexture(game.mainMenu.logo, NULL, NULL, &dest.w, &dest.h);
+
+	if (game.mainMenu.animationTime == -1)
+	{
+		game.mainMenu.animationTime = (game.screenHeight - dest.h) / 2;
+	}
+	else if (game.mainMenu.animationTime > 0)
+	{
+		game.mainMenu.animationTime -= 1;
+	}
+	
+	dest.x = (game.screenWidth - dest.w) / 2;
+	dest.y = game.mainMenu.animationTime;
+
+
+	SDL_RenderCopy(game.renderer, game.mainMenu.logo, NULL, &dest);
+	if (game.mainMenu.animationTime > 0) {
+		return;
+	}
+
+	x = dest.x + (dest.w / 2) - 100;
+	y = dest.h + 20;
+
+	for (int i = 0; i < 5; i++)
+	{
+		drawText(game.mainMenu.menuOptions[i], 30, game.mainMenu.selectedOption == i, false, x, y);
+		y += 32;
+	}
+}
+
+void doGame(void)
+{
+	if (!level.complete) {
+		doMovement();
+		doEntities();
+	}
+
+	drawScene();
+	drawEntities();
+	drawPlayer();
+
+	if (level.complete) {
+		drawComplete();
+	}
+}
 void doInput(void)
 {
 	SDL_Event event;
@@ -79,41 +163,108 @@ void doInput(void)
 				resetLevel();
 				return;
 			}
-			movePlayer(&event.key, 1);
-			break;
+			
+			if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE
+				&& game.mode != MAINMENU)
+			{
+				game.mode = game.mode == PLAYING ? PAUSED : PLAYING;
+			}
+
+			if (event.key.keysym.scancode == SDL_SCANCODE_RETURN && game.mode == MAINMENU)
+			{
+				if (game.mainMenu.animationTime > 0) {
+					game.mainMenu.animationTime = 0;
+					return;
+				}
+			}
+
+			if (game.mode == MAINMENU)
+			{
+				changeOption(&event.key);
+				return;
+			}
+
+			if (game.mode == PLAYING && !level.complete)
+				movePlayer(&event.key);
 		default:
 			break;
 		}
 	}
 }
 
-void movePlayer(SDL_KeyboardEvent* event, int down)
+void changeOption(SDL_KeyboardEvent* keyEvent)
+{
+	if (keyEvent->repeat == 0)
+	{
+		if (keyEvent->keysym.scancode == SDL_SCANCODE_DOWN)
+		{
+			game.mainMenu.selectedOption++;
+		}
+
+		if (keyEvent->keysym.scancode == SDL_SCANCODE_UP)
+		{
+			game.mainMenu.selectedOption--;
+		}
+
+		if (keyEvent->keysym.scancode == SDL_SCANCODE_RETURN)
+		{
+			switch (game.mainMenu.selectedOption)
+			{
+				case START:
+					game.mode = PLAYING;
+				case MAP_EDITOR:
+					break;
+				case OPTIONS:
+					break;
+				case CREDITS:
+					break;
+				case EXIT:
+					exit(1);
+				default:
+					break;
+			}
+		}
+
+		if (game.mainMenu.selectedOption < 0) {
+			game.mainMenu.selectedOption = 4;
+		}
+
+		if (game.mainMenu.selectedOption > 4) {
+			game.mainMenu.selectedOption = 0;
+		}
+	}
+}
+void movePlayer(SDL_KeyboardEvent* event)
 {
 	if (playerMoving(level.player)) {
 		return;
 	}
 
 	if (event->repeat == 0) {
-		if (event->keysym.scancode == SDL_SCANCODE_UP) {
-			level.player->dy = (down) ? -PLAYER_SPEED : 0;
+		if (event->keysym.scancode == SDL_SCANCODE_UP)
+		{
+			level.player->dy = -PLAYER_SPEED;
 			level.player->dx = 0;
 			level.player->ny = level.player->y - TILESIZE;
 		}
 
-		if (event->keysym.scancode == SDL_SCANCODE_DOWN) {
-			level.player->dy = (down) ? PLAYER_SPEED : 0;
+		if (event->keysym.scancode == SDL_SCANCODE_DOWN)
+		{
+			level.player->dy = PLAYER_SPEED;
 			level.player->dx = 0;
 			level.player->ny = level.player->y + TILESIZE;
 		}
 
-		if (event->keysym.scancode == SDL_SCANCODE_LEFT) {
-			level.player->dx = (down) ? -PLAYER_SPEED : 0;
+		if (event->keysym.scancode == SDL_SCANCODE_LEFT)
+		{
+			level.player->dx = -PLAYER_SPEED;
 			level.player->dy = 0;
 			level.player->nx = level.player->x - TILESIZE;
 		}
 
-		if (event->keysym.scancode == SDL_SCANCODE_RIGHT) {
-			level.player->dx = (down) ? PLAYER_SPEED : 0;
+		if (event->keysym.scancode == SDL_SCANCODE_RIGHT)
+		{
+			level.player->dx = PLAYER_SPEED;
 			level.player->dy = 0;
 			level.player->nx = level.player->x + TILESIZE;
 		}
@@ -161,9 +312,7 @@ void doEntities(void)
 
 	}
 
-	if (switched == level.switches) {
-		exit(1);
-	}
+	level.complete = (switched == level.switches);
 }
 
 bool onSwitch(Entity* e)
@@ -266,7 +415,7 @@ bool checkCanMove(Entity* entity, int nx, int ny)
 		}
 
 	}
-	canMove = !(nx + entity->sprite->w > SCREEN_WIDTH) && !(nx < 0) && !(ny + entity->sprite->h > SCREEN_HEIGHT) && !(ny < 0);
+	canMove = !(nx + entity->sprite->w > game.screenWidth) && !(nx < 0) && !(ny + entity->sprite->h > game.screenHeight) && !(ny < 0);
 
 	return canMove;
 }
@@ -275,6 +424,16 @@ void drawScene(void)
 {
 	SDL_RenderClear(game.renderer);
 	drawGround();
+	drawLines();
+}
+
+void drawComplete(void)
+{
+	SDL_SetRenderDrawBlendMode(game.renderer, SDL_BLENDMODE_BLEND);
+	SDL_SetRenderDrawColor(game.renderer, 0, 0, 0, 100);
+	SDL_RenderFillRectF(game.renderer, NULL);
+	SDL_SetRenderDrawBlendMode(game.renderer, SDL_BLENDMODE_NONE);
+	drawText("LEVEL COMPLETE", 32, false, true, 0, 0);
 }
 
 void drawLines(void)
@@ -283,12 +442,12 @@ void drawLines(void)
 
 	SDL_SetRenderDrawColor(game.renderer, 255, 255, 255, 20);
 
-	for (int y = TILESIZE; y < SCREEN_WIDTH; y += TILESIZE) {
-		SDL_RenderDrawLine(game.renderer, 0, y, SCREEN_WIDTH, y);
+	for (int y = TILESIZE; y < game.screenHeight; y += TILESIZE) {
+		SDL_RenderDrawLine(game.renderer, 0, y, game.screenHeight, y);
 	}
 
-	for (int x = TILESIZE; x < SCREEN_WIDTH; x += TILESIZE) {
-		SDL_RenderDrawLine(game.renderer, x, 0, x, SCREEN_HEIGHT);
+	for (int x = TILESIZE; x < game.screenWidth; x += TILESIZE) {
+		SDL_RenderDrawLine(game.renderer, x, 0, x, game.screenWidth);
 	}
 
 	SDL_SetRenderDrawBlendMode(game.renderer, SDL_BLENDMODE_NONE);
@@ -296,8 +455,8 @@ void drawLines(void)
 
 void drawGround(void)
 {
-	for (int x = 0; x < SCREEN_WIDTH; x += TILESIZE) {
-		for (int y = 0; y < SCREEN_HEIGHT; y += TILESIZE) {
+	for (int x = 0; x < game.screenWidth; x += TILESIZE) {
+		for (int y = 0; y < game.screenHeight; y += TILESIZE) {
 			blitRect(game.spritesheet, level.groundSprite, x, y);
 		}
 	}
@@ -349,7 +508,6 @@ void drawPlayer(void)
 
 void capFrameRate(long* then, float* remainder)
 {
-	//
 	long wait, frameTime;
 
 	wait = 16 + *remainder;
@@ -374,8 +532,8 @@ void capFrameRate(long* then, float* remainder)
 void outOfBounds(void)
 {
 	// if level.player goes beyond bounds of screen, reset position to nearest tile
-	if (level.player->x + level.player->sprite->w > SCREEN_WIDTH) {
-		centreToTile(&level.player->x, &level.player->y, level.player->sprite->w, level.player->sprite->h, SCREEN_WIDTH - TILESIZE, level.player->y);
+	if (level.player->x + level.player->sprite->w > game.screenWidth) {
+		centreToTile(&level.player->x, &level.player->y, level.player->sprite->w, level.player->sprite->h, game.screenWidth - TILESIZE, level.player->y);
 		level.player->nx = level.player->x;
 		level.player->ny = level.player->y;
 	}
@@ -386,8 +544,8 @@ void outOfBounds(void)
 		level.player->ny = level.player->y;
 	}
 
-	if (level.player->y + level.player->sprite->h > SCREEN_HEIGHT) {
-		centreToTile(&level.player->x, &level.player->y, level.player->sprite->w, level.player->sprite->h, level.player->x, SCREEN_HEIGHT - TILESIZE);
+	if (level.player->y + level.player->sprite->h > game.screenHeight) {
+		centreToTile(&level.player->x, &level.player->y, level.player->sprite->w, level.player->sprite->h, level.player->x, game.screenHeight - TILESIZE);
 		level.player->nx = level.player->x;
 		level.player->ny = level.player->y;
 	}

@@ -1,6 +1,9 @@
 #include "common.h"
 #include "physics.h"
-
+int coordToTileCoord(int coord)
+{
+    return (coord /= TILESIZE) * TILESIZE;
+}
 void centreToTile(int *x, int *y, int width, int height, int nx, int ny)
 {
     int startingX = (nx / TILESIZE) * TILESIZE;
@@ -13,7 +16,7 @@ void centreToTile(int *x, int *y, int width, int height, int nx, int ny)
 int getCentre(int dim)
 {
     if (dim >= TILESIZE)
-	return dim;
+	    return dim;
 
     return (TILESIZE - dim) / 2;
 }

@@ -1,7 +1,12 @@
 void doInput(void);
+void doGame(void);
+void doMainMenu(void);
+void doPauseMenu(void);
 void doMovement(void);
 void doEntities(void);
-void movePlayer(SDL_KeyboardEvent *event, int down);
+void changeOption(SDL_KeyboardEvent* event);
+void movePlayer(SDL_KeyboardEvent *event);
+void drawComplete(void);
 void drawEntities(void);
 void drawPlayer(void);
 void drawScene(void);

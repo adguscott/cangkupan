@@ -1,10 +1,11 @@
-#define SCREEN_WIDTH 512
-#define SCREEN_HEIGHT 576
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 600
 #define TILESIZE 64
 #define SPRITES_DIR "/data/sprite_mapping/"
 #define PLAYER_SPEED 4
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
+
 
 // entity flags
 #define IS_SOLID 1

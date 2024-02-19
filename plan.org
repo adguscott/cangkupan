@@ -1,0 +1,25 @@
+#+TITLE: PLAN
+
+** DONE Draw based on screen size, center map
+
+** TODO Figure out how to malloc the map array
+
+** TODO Load map from file
+*** Initially text file
+
+** TODO Create map editor
+*** Load and save via binary files
+
+** TODO Minimise spritesheet/sprites
+*** Only the necessary ones, ground, player, walls, crates, switches and coloured crates and switches
+
+** TODO Create menu
+1. Play
+2. Map Editor
+   * Load
+   * Save
+3. Options
+   * Resolution
+   * 
+4. Credits
+5. Exit

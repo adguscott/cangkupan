@@ -1,6 +1,22 @@
 typedef struct Sprite Sprite;
 typedef struct Entity Entity;
-typedef struct Button Button;
+typedef struct MainMenu MainMenu;
+
+enum Mode 
+{
+    MAINMENU = 0,
+    PLAYING = 1,
+    PAUSED = 2,
+};
+
+enum MainMenuOptions
+{
+    START = 0,
+    MAP_EDITOR = 1,
+    OPTIONS = 2,
+    CREDITS = 3,
+    EXIT = 4,
+};
 
 struct Sprite
 {
@@ -8,6 +24,15 @@ struct Sprite
     int x, y;
     int w, h;
     Sprite *next;
+};
+
+struct MainMenu
+{
+    SDL_Texture* logo;
+    Mix_Music* music;
+    char menuOptions[5][11];
+    int animationTime;
+    int selectedOption;
 };
 
 typedef struct
@@ -21,12 +46,17 @@ typedef struct
 
 typedef struct
 {
+    bool fullScreenMode;
+    TTF_Font* font;
+    int screenWidth;
+    int screenHeight;
+    enum Mode mode;
+    MainMenu mainMenu;
     Sprites sprites;
     SDL_Texture *spritesheet;
     SDL_Window *window;
     SDL_Renderer *renderer;
 } Game;
-
 
 struct Entity
 {
@@ -58,12 +88,15 @@ typedef struct
 typedef struct
 {
     int switches;
+    char map[9][8];
+    int mapWidth;
+    int mapHeight;
     Player *player;
-    char map[8][9];
     Sprite *groundSprite;
     int switchCount;
     Entities entities;
     bool mapEditorMode;
+    bool complete;
 } Level;
 
 typedef struct

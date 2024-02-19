@@ -1,4 +1,3 @@
-#include "SDL_image.h"
 #include "common.h"
 #include "init.h"
 
@@ -11,21 +10,29 @@ bool initSDL(void)
 	rendererFlags = SDL_RENDERER_ACCELERATED;
 
 	windowFlags = 0;
-	
+
 	windowFlags |= SDL_WINDOW_RESIZABLE;
 
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		SDL_LogError(SDL_LOG_CATEGORY_VIDEO, "Couldn't initialise SDL: %s\n", SDL_GetError());
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
+		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Couldn't initialise SDL: %s\n", SDL_GetError());
 		return false;
 	}
 
 	IMG_Init(IMG_INIT_PNG);
 
+	TTF_Init();
+	game.font = TTF_OpenFont("data/Merriweather-Regular.ttf", 23);
+
 	game.window = SDL_CreateWindow("Cangkupan", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, windowFlags);
-	
+
 	if (!game.window) {
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to open SDL Window: %s\n", SDL_GetError());
 		return false;
+	}
+
+	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+	{
+		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
 	}
 
 	// not sure what this does?
@@ -39,7 +46,9 @@ bool initSDL(void)
 	}
 
 	setWindowIcon();
-	//SDL_SetWindowFullscreen(game.window, SDL_WINDOW_FULLSCREEN);
+	setMainMenu();
+	SDL_ShowCursor(SDL_DISABLE);
+	getScreenDims();
 	return true;
 }
 
@@ -54,11 +63,32 @@ bool loadTexture(void)
 
 	return true;
 }
+
 void setWindowIcon(void)
 {
 	SDL_Log("Setting window icon\n");
 	SDL_Surface* icon = IMG_Load("gfx/icon.png");
 	SDL_SetWindowIcon(game.window, icon);
+}
+
+void setMainMenu(void)
+{
+	SDL_Log("Setting mainMenu\n");
+	SDL_Surface* menu = IMG_Load("gfx/logo.png");
+	game.mainMenu.logo = SDL_CreateTextureFromSurface(game.renderer, menu);
+	game.mainMenu.animationTime = -1;
+	game.mainMenu.music = Mix_LoadMUS("audio/KOOLA04.ogg");
+
+	char menuOptions[5][11] =
+	{
+		"Start",
+		"Map Editor",
+		"Options",
+		"Credits",
+		"Exit"
+	};
+
+	memcpy(game.mainMenu.menuOptions, menuOptions, sizeof(menuOptions));
 }
 
 bool loadSprites(void)
@@ -146,7 +176,8 @@ void cleanup(void)
 {
 	SDL_DestroyRenderer(game.renderer);
 	SDL_DestroyWindow(game.window);
-
+	TTF_CloseFont(game.font);
+	TTF_Quit();
 	IMG_Quit();
 	SDL_Quit();
 }
@@ -154,6 +185,7 @@ void cleanup(void)
 void resetLevel(void)
 {
 	Entity* e;
+	level.complete = false;
 
 	while (level.entities.entityHead.next) {
 		e = level.entities.entityHead.next;
@@ -282,14 +314,17 @@ void initEntity(char* spriteName, int flags, int x, int y)
 
 void initMap(void)
 {
-	char map[8][9] = { { '0', '1', '1', '1', '1', '1', '1', '1', '1' },
-			   { '0', '1', '.', '1', '.', '0', '*', '0', '1' },
-			   { '1', '1', 'p', '1', '1', '1', '0', '0', '1' },
-			   { '1', '0', '*', '0', '1', '0', 'x', '0', '1' },
-			   { '1', '0', '0', '*', '*', '.', '*', '.', '1' },
-			   { '1', '0', '0', '.', '0', '0', '*', '0', '1' },
-			   { '1', '1', '1', '1', '1', '1', '.', '0', '1' },
-			   { '0', '0', '0', '0', '0', '1', '1', '1', '1' }
+	char map[9][8] =
+	{
+		{ '0', '0', '1', '1', '1', '1', '1', '0' },
+		{ '1', '1', '1', '0', '0', '0', '1', '0' },
+		{ '1', '.', 'p', '*', '0', '0', '1', '0' },
+		{ '1', '1', '1', '0', '*', '.', '1', '0' },
+		{ '1', '.', '1', '1', '*', '0', '1', '0' },
+		{ '1', '0', '1', '0', '.', '0', '1', '1' },
+		{ '1', '*', '0', 'x', '*', '*', '.', '1' },
+		{ '1', '0', '0', '0', '.', '0', '0', '1' },
+		{ '1', '1', '1', '1', '1', '1', '1', '1' }
 	};
 
 	memcpy(level.map, map, sizeof(map));
@@ -304,14 +339,20 @@ bool loadLevel(void)
 bool loadMap(void)
 {
 	int x, y;
-	x = y = 0;
-	for (int i = 0; i < 8; i++) {
-		y = 0;
-		for (int j = 0; j < 9; j++) {
+	y = (game.screenHeight / 2) - ((9 * TILESIZE) / 2);
+	y = coordToTileCoord(y);
+
+
+	for (int i = 0; i < 9; i++) {
+		x = (game.screenWidth / 2) - ((8 * TILESIZE) / 2);
+		x = coordToTileCoord(x);
+
+		for (int j = 0; j < 8; j++) {
 			loadEntity(level.map[i][j], x, y);
-			y += TILESIZE;
+			x += TILESIZE;
 		}
-		x += TILESIZE;
+
+		y += TILESIZE;
 	}
 	return true;
 }
@@ -342,3 +383,7 @@ void loadEntity(char entChar, int x, int y)
 	}
 }
 
+void getScreenDims()
+{
+	SDL_GetRendererOutputSize(game.renderer, &game.screenWidth, &game.screenHeight);
+}
