@@ -88,7 +88,7 @@ typedef struct
 typedef struct
 {
     int switches;
-    char map[9][8];
+    char **map;
     int mapWidth;
     int mapHeight;
     Player *player;

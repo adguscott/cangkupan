@@ -314,20 +314,68 @@ void initEntity(char* spriteName, int flags, int x, int y)
 
 void initMap(void)
 {
-	char map[9][8] =
-	{
-		{ '0', '0', '1', '1', '1', '1', '1', '0' },
-		{ '1', '1', '1', '0', '0', '0', '1', '0' },
-		{ '1', '.', 'p', '*', '0', '0', '1', '0' },
-		{ '1', '1', '1', '0', '*', '.', '1', '0' },
-		{ '1', '.', '1', '1', '*', '0', '1', '0' },
-		{ '1', '0', '1', '0', '.', '0', '1', '1' },
-		{ '1', '*', '0', 'x', '*', '*', '.', '1' },
-		{ '1', '0', '0', '0', '.', '0', '0', '1' },
-		{ '1', '1', '1', '1', '1', '1', '1', '1' }
-	};
+	const int defaultSize = 30;
+	int x, totalX, totalY;
+	char** array2d;
+	char* array1d;
 
-	memcpy(level.map, map, sizeof(map));
+	x = totalX = totalY = 0;
+
+	if (level.map != NULL) {
+		free(level.map);
+	}
+	
+	level.map = malloc(defaultSize * sizeof(char*));
+
+	for (int i = 0; i < defaultSize; i++)
+	{
+		level.map[i] = malloc(defaultSize * sizeof(char));
+	}
+
+	FILE* fp;
+	int lineSize = 100;
+	char c;
+
+
+	fp = fopen("data/maps/map3", "r");
+	rewind(fp);
+	if (fp == NULL) {
+		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error opening %s", "data/maps/map1");
+		return;
+	}
+
+	while ((c = (getc(fp))) != EOF) {
+		if (c == '\n')
+		{
+			totalX = x > totalX ? x : totalX;
+			x = 0;
+			totalY++;
+			continue;
+		}
+
+		level.map[totalY][x] = c;
+		x++;
+	}
+	fclose(fp);
+
+	totalY++;
+	level.mapHeight = totalY;
+	level.mapWidth = totalX;
+
+	for (int i = 0; i < totalY; i++)
+	{
+		array1d = realloc(level.map[i], totalX * sizeof(char));
+		if (array1d != NULL)
+		{
+			level.map[i] = array1d;
+		}
+	}
+
+	array2d = realloc(level.map, sizeof(char*) * totalY);
+	if (array2d != NULL)
+	{
+		level.map = array2d;
+	}
 }
 
 bool loadLevel(void)
@@ -339,15 +387,15 @@ bool loadLevel(void)
 bool loadMap(void)
 {
 	int x, y;
-	y = (game.screenHeight / 2) - ((9 * TILESIZE) / 2);
+	y = (game.screenHeight / 2) - ((level.mapHeight * TILESIZE) / 2);
 	y = coordToTileCoord(y);
 
 
-	for (int i = 0; i < 9; i++) {
-		x = (game.screenWidth / 2) - ((8 * TILESIZE) / 2);
+	for (int i = 0; i < level.mapHeight; i++) {
+		x = (game.screenWidth / 2) - ((level.mapWidth * TILESIZE) / 2);
 		x = coordToTileCoord(x);
 
-		for (int j = 0; j < 8; j++) {
+		for (int j = 0; j < level.mapWidth; j++) {
 			loadEntity(level.map[i][j], x, y);
 			x += TILESIZE;
 		}

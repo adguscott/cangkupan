@@ -1,5 +1,5 @@
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 600
+#define SCREEN_WIDTH 1336
+#define SCREEN_HEIGHT 768
 #define TILESIZE 64
 #define SPRITES_DIR "/data/sprite_mapping/"
 #define PLAYER_SPEED 4
