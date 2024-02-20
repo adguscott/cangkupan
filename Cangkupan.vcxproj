@@ -88,12 +88,12 @@
     <ClCompile>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>C:\Programming\Libaries\SDL2-2.30.0\include;C:\Programming\Libaries\SDL2_ttf-2.22.0\include;C:\Programming\Libaries\SDL2_mixer-2.8.0\include;C:\Programming\Libaries\SDL2_image-2.8.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Programming\Libraries\SDL2-2.30.0\include;C:\Programming\Libraries\SDL2_ttf-2.22.0\include;C:\Programming\Libraries\SDL2_mixer-2.8.0\include;C:\Programming\Libraries\SDL2_image-2.8.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>C:\Programming\Libaries\SDL2_image-2.8.2\lib\x64;C:\Programming\Libaries\SDL2_mixer-2.8.0\lib\x64;C:\Programming\Libaries\SDL2_ttf-2.22.0\lib\x64;C:\Programming\Libaries\SDL2-2.30.0\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Programming\Libraries\SDL2_image-2.8.2\lib\x64;C:\Programming\Libraries\SDL2_mixer-2.8.0\lib\x64;C:\Programming\Libraries\SDL2_ttf-2.22.0\lib\x64;C:\Programming\Libraries\SDL2-2.30.0\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_ttf.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
