@@ -146,7 +146,7 @@ void doGame(void)
 	drawEntities();
 	drawPlayer();
 
-	if (level.complete) {
+	if (level.complete && !playerMoving(level.player)) {
 		drawComplete();
 	}
 }
